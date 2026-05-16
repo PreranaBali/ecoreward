@@ -86,9 +86,21 @@ const Upload = () => {
     
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setGpsLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => console.log("Silent GPS fallback triggered.")
-      );
+  (pos) => {
+    setGpsLocation({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+    });
+  },
+  () => {
+    // console.log("⚠️ GPS unavailable. Using temporary fallback coordinates.");
+
+    setGpsLocation({
+      lat: 12.9716,
+      lng: 77.5946,
+    });
+  }
+);
     }
   };
 
@@ -103,12 +115,13 @@ const Upload = () => {
       
       // 2. Wrap payloads into standard Form-Data boundary allocations for Multer parsing
       const formData = new FormData();
-      formData.append('image', imageBlob, 'evidence.jpg'); 
+      formData.append('image', imageBlob, 'evidence.jpg');
       formData.append('latitude', gpsLocation?.lat || '');
       formData.append('longitude', gpsLocation?.lng || '');
-      formData.append('district', selectedDistrict);
-      formData.append('taluk', selectedTaluk);
-      formData.append('village', selectedVillage);
+      formData.append(
+        'address',
+        `${selectedVillage}, ${selectedTaluk}, ${selectedDistrict}`
+      );
 
       // 3. Dispatch true stateless HTTP POST frame across your Express gateway port
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';

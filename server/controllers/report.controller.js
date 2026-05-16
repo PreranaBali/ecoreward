@@ -13,6 +13,9 @@ const exifService  = require('../utils/exifService');
 /* ─── Upload / Submit Report ────────────────────────────────────── */
 exports.uploadReport = async (req, res, next) => {
   try {
+    console.log(req.body);
+    console.log(req.file);
+    console.log(req.user);
     const { address, latitude, longitude, city, pincode, binQRCode } = req.body;
 
     if (!req.file) {
@@ -61,38 +64,43 @@ exports.uploadReport = async (req, res, next) => {
       .filter((v) => typeof v === 'boolean')
       .every(Boolean);
 
-    const verificationStatus = allPassed ? 'verified' : 'pending';
+    const verificationStatus = 'pending';
 
     /* ── 5. Calculate reward ──────────────────────────────────── */
-    const user = await User.findById(req.user._id);
-    const { base, bonus, total } = rewardEngine.calculate(user, verification);
+    const mockUser = {
+      streak: 0,
+      points: 0,
+    };
+
+    const { base, bonus, total } =
+      rewardEngine.calculate(mockUser, verification);
 
     /* ── 6. Save report ───────────────────────────────────────── */
-    const report = await Report.create({
-      userId:            req.user._id,
-      address,
-      latitude:          +latitude,
-      longitude:         +longitude,
-      city:              city || '',
-      pincode:           pincode || '',
-      imageUrl:          uploadResult.secure_url,
-      imagePublicId:     uploadResult.public_id,
-      imageHash,
-      exifTimestamp:     exifData?.DateTimeOriginal || null,
-      exifGPSLat:        exifData?.GPSLatitude   || null,
-      exifGPSLon:        exifData?.GPSLongitude  || null,
-      rewardPoints:      base,
-      streakBonus:       bonus,
-      totalAwarded:      verificationStatus === 'verified' ? total : 0,
-      verificationStatus,
-      verification,
-      binQRCode:         binQRCode || '',
-    });
+const report = await Report.create({
+  userId:            null,
+  address,
+  latitude:          +latitude,
+  longitude:         +longitude,
+  city:              city || '',
+  pincode:           pincode || '',
+  imageUrl:          uploadResult.secure_url,
+  imagePublicId:     uploadResult.public_id,
+  imageHash,
+  exifTimestamp:     exifData?.DateTimeOriginal || null,
+  exifGPSLat:        exifData?.GPSLatitude || null,
+  exifGPSLon:        exifData?.GPSLongitude || null,
+  rewardPoints:      base,
+  streakBonus:       bonus,
+  totalAwarded:      verificationStatus === 'verified' ? total : 0,
+  verificationStatus,
+  verification,
+  binQRCode:         binQRCode || '',
+});
 
     /* ── 7. Award points if verified ─────────────────────────── */
-    if (verificationStatus === 'verified') {
-      await user.addPoints(total);
-    }
+    // if (verificationStatus === 'verified') {
+    //   await user.addPoints(total);
+    // }
 
     res.status(201).json({
       success: true,
@@ -102,6 +110,7 @@ exports.uploadReport = async (req, res, next) => {
       data: { report, pointsAwarded: verificationStatus === 'verified' ? total : 0 },
     });
   } catch (err) {
+    console.error(err);
     next(err);
   }
 };
@@ -128,6 +137,21 @@ exports.getHistory = async (req, res, next) => {
         reports,
         pagination: { page: +page, limit: +limit, total, pages: Math.ceil(total / limit) },
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getPendingReports = async (req, res, next) => {
+  try {
+    const reports = await Report.find({
+      verificationStatus: 'pending',
+    });
+
+    res.json({
+      success: true,
+      data: { reports },
     });
   } catch (err) {
     next(err);
