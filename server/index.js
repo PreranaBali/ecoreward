@@ -37,7 +37,7 @@ const server = http.createServer(app);
 /* ─── Socket.io Configuration ──────────────────────────────────── */
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: true, // <-- CHANGE: This dynamically allows any domain
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: true,
   }
@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
 app.use(helmet());
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173' || "https://ecoreward-68cq.vercel.app/",
+  origin: true, // <-- CHANGE: This dynamically allows any domain
   credentials: true,
 }));
 
