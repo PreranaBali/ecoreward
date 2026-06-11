@@ -141,7 +141,7 @@ const Dashboard = () => {
               Command Center
             </h1>
             <p className="text-gray-500 font-medium">
-              Welcome back, {user.name}. Your environmental impact is growing.
+              Welcome back. Your environmental impact is growing.
             </p>
           </div>
 
